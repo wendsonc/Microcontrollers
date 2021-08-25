@@ -1,4 +1,0 @@
-```bash
-* linguist-vendored
-*.makefile linguist-vendored=false
-```
