@@ -1,3 +1,1 @@
-* linguist-vendored
-*.makefile linguist-vendored=false
 *.assembly linguist-detectable=true
