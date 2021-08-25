@@ -1,0 +1,575 @@
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*              MODIFICAÇÕES PARA USO COM 12F675                   *
+                      00003 ;*                FEITAS PELO PROF. MARDSON                        *
+                      00004 ;*                      MARÇO DE 2021                              *
+                      00005 ;*                 BASEADO NO EXEMPLO DO LIVRO                     *
+                      00006 ;*           Desbravando o PIC. David José de Souza                *
+                      00007 ;*-----------------------------------------------------------------*
+                      00008 ;*   MODELO PARA O PIC 12F675                                      *
+                      00009 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00010 
+                      00011 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00012 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00013 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00014 #INCLUDE <p12f675.inc>  ;ARQUIVO PADRÃO MICROCHIP PARA 12F675
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Nov 22 2017
+                      00005 ;  MPASM PIC12F675 processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2017 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00367         LIST
+                      00015 
+2007   3FA4           00016         __CONFIG _BODEN_OFF & _CP_OFF & _PWRTE_ON & _WDT_OFF & _MCLRE_ON & _INTRC_OSC_NOCLKOUT
+                      00017 
+                      00018 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00019 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00020 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00021 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00022 #DEFINE BANK0   BCF STATUS,RP0  ;SETA BANK 0 DE MEMÓRIA
+                      00023 #DEFINE BANK1   BSF STATUS,RP0  ;SETA BANK 1 DE MAMÓRIA
+                      00024 
+                      00025 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00026 ;*                         VARIÁVEIS                               *
+                      00027 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00028 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00029 ; PELO SISTEMA
+                      00030 
+                      00031         CBLOCK  0x20    ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00032                                         ;USUÁRIO
+  00000020            00033                 W_TEMP          ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00034                 STATUS_TEMP     ;JUNTO ÀS INTERRUPÇÕES
+  00000022            00035                 DD
+  00000023            00036                 MM
+  00000024            00037                 AA
+  00000025            00038                 RES_W
+  00000026            00039                 C_DIAS
+  00000027            00040                 B_ANOS
+  00000028            00041                 SOMA
+  00000029            00042                 C_MES
+  0000002A            00043                 AUX_MES
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  0000002B            00044                 AUX_RES
+  0000002C            00045                 AUX
+  0000002D            00046                 AUX_1
+  0000002E            00047                 AUX_2
+  0000002F            00048                 R
+  00000030            00049                 R1
+  00000031            00050                 R2
+  00000032            00051                 M
+  00000033            00052                 M1
+  00000034            00053                 RES_M
+  00000035            00054                 RES_M1
+  00000036            00055                 RES_M1_1
+  00000037            00056                 ANO
+  00000038            00057                 ANO2
+  00000039            00058                 ANO_BISSEXTO ;LOGICO
+                      00059                 
+                      00060                 
+                      00061                 
+                      00062 
+                      00063                 ;COLOQUE AQUI SUAS NOVAS VARIÁVEIS
+                      00064                 ;NÃO ESQUEÇA COMENTÁRIOS ESCLARECEDORES
+                      00065 
+                      00066         ENDC                    ;FIM DO BLOCO DE DEFINIÇÃO DE VARIÁVEIS
+                      00067 
+                      00068 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00069 ;*                        FLAGS INTERNOS                           *
+                      00070 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00071 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA
+                      00072 
+                      00073 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00074 ;*                         CONSTANTES                              *
+                      00075 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00076 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA
+                      00077 
+                      00078 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00079 ;*                           ENTRADAS                              *
+                      00080 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00081 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00082 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00083 
+                      00084 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00085 ;*                           SAÍDAS                                *
+                      00086 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00087 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00088 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00089 
+                      00090 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00091 ;*                       VETOR DE RESET                            *
+                      00092 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00093 
+0000                  00094         ORG     0x00                    ;ENDEREÇO INICIAL DE PROCESSAMENTO
+0000   2836           00095         GOTO    INICIO
+                      00096         
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00097 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00098 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+                      00099 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00100 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00101 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA
+                      00102 
+0004                  00103         ORG     0x04                    ;ENDEREÇO INICIAL DA INTERRUPÇÃO
+0004   00A0           00104         MOVWF   W_TEMP          ;COPIA W PARA W_TEMP
+0005   0E03           00105         SWAPF   STATUS,W
+0006   00A1           00106         MOVWF   STATUS_TEMP     ;COPIA STATUS PARA STATUS_TEMP
+                      00107 
+                      00108 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00109 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00110 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00111 ; AQUI SERÃO ESCRITAS AS ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS
+                      00112 ; INTERRUPÇÕES
+                      00113 
+                      00114 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00115 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00116 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00117 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00118 ; RETORNAR DA INTERRUPÇÃO
+                      00119 
+0007                  00120 SAI_INT
+0007   0E21           00121         SWAPF   STATUS_TEMP,W
+0008   0083           00122         MOVWF   STATUS          ;MOVE STATUS_TEMP PARA STATUS
+0009   0EA0           00123         SWAPF   W_TEMP,F
+000A   0E20           00124         SWAPF   W_TEMP,W        ;MOVE W_TEMP PARA W
+000B   0009           00125         RETFIE
+                      00126 
+                      00127 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00128 ;*                       ROTINAS E SUBROTINAS                      *
+                      00129 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00130 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00131 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+                      00132 
+                      00133 
+                      00134         
+000C                  00135 DIVISAO_4
+000C   0824           00136         MOVF AA, W
+000D   00B7           00137         MOVWF ANO
+000E   3004           00138         MOVLW .4
+000F                  00139 LOOP_D4 
+Message[305]: Using default destination of 1 (file).
+000F   02B7           00140         SUBWF ANO
+0010   1C03           00141         BTFSS STATUS, C  
+0011   0008           00142         RETURN
+Message[305]: Using default destination of 1 (file).
+0012   0AAC           00143         INCF AUX
+0013   280F           00144         GOTO LOOP_D4
+                      00145 
+0014                  00146 DIVISAO_100
+0014   0824           00147         MOVF AA, W
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0015   00B8           00148         MOVWF ANO2
+0016   3064           00149         MOVLW .100
+0017                  00150 LOOP_D100
+Message[305]: Using default destination of 1 (file).
+0017   02B8           00151         SUBWF ANO2
+0018   1C03           00152         BTFSS STATUS, C  
+0019   0008           00153         RETURN
+Message[305]: Using default destination of 1 (file).
+001A   0AAD           00154         INCF AUX_1
+001B   2817           00155         GOTO LOOP_D100
+                      00156 
+001C                  00157 MULTI_4
+001C   3004           00158         MOVLW .4
+001D   00B2           00159         MOVWF M
+001E                  00160 LOOP_4
+001E   1903           00161         BTFSC STATUS, Z
+001F   0008           00162         RETURN
+0020   082C           00163         MOVF AUX, W 
+Message[305]: Using default destination of 1 (file).
+0021   07B4           00164         ADDWF RES_M
+Message[305]: Using default destination of 1 (file).
+0022   03B2           00165         DECF M
+0023   281E           00166         GOTO LOOP_4
+                      00167 
+0024                  00168 MULTI_100
+0024   082D           00169         MOVF AUX_1, W
+0025   00B5           00170         MOVWF RES_M1
+0026   3064           00171         MOVLW .100
+0027   00B3           00172         MOVWF M1
+                      00173         
+0028                  00174 LOOP_100
+Message[305]: Using default destination of 1 (file).
+0028   03B3           00175         DECF M1
+0029   1903           00176         BTFSC STATUS, Z
+002A   0008           00177         RETURN
+002B   082D           00178         MOVF AUX_1, W 
+Message[305]: Using default destination of 1 (file).
+002C   07B5           00179         ADDWF RES_M1
+002D   1803           00180         BTFSC STATUS, C
+Message[305]: Using default destination of 1 (file).
+002E   0AB6           00181         INCF RES_M1_1
+002F   2828           00182         GOTO LOOP_100
+                      00183 
+                      00184         
+                      00185 
+                      00186         
+0030                  00187 TESTE_BISSEXTO
+                      00188         
+0030   200C           00189         CALL DIVISAO_4
+0031   201C           00190         CALL MULTI_4
+0032   0834           00191         MOVF RES_M, W
+0033   0224           00192         SUBWF AA, W ; d = f - w
+0034   00AF           00193         MOVWF R
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0035   0008           00194         RETURN
+                      00195         
+                      00196 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00197 ;*                     INICIO DO PROGRAMA                          *
+                      00198 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00199         
+0036                  00200 INICIO
+0036   1683           00201         BANK1                           ;ALTERA PARA O BANCO 1
+0037   3000           00202         MOVLW   B'00000000' ;CONFIGURA TODAS AS PORTAS DO GPIO (PINOS)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0038   0085           00203         MOVWF   TRISIO          ;COMO SAÍDAS
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0039   019F           00204         CLRF    ANSEL           ;DEFINE PORTAS COMO Digital I/O
+003A   3004           00205         MOVLW   B'00000100'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+003B   0081           00206         MOVWF   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO
+003C   3000           00207         MOVLW   B'00000000'
+003D   008B           00208         MOVWF   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES
+003E   1283           00209         BANK0                           ;RETORNA PARA O BANCO
+003F   3007           00210         MOVLW   B'00000111'
+0040   0099           00211         MOVWF   CMCON           ;DEFINE O MODO DE OPERAÇÃO DO COMPARADOR ANALÓGICO
+                      00212 
+                      00213 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00214 ;*                     INICIALIZAÇÃO DAS VARIÁVEIS                 *
+                      00215 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00216 
+                      00217 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00218 ;*                     ROTINA PRINCIPAL                            *
+                      00219 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+0041                  00220 MAIN
+                      00221 
+                      00222 ;DEFINIR AS VARIAVEIS
+0041   3015           00223         MOVLW .21
+0042   00A2           00224         MOVWF DD
+0043   3005           00225         MOVLW .5
+0044   00A3           00226         MOVWF MM
+0045   3015           00227         MOVLW .21
+0046   00A4           00228         MOVWF AA
+                      00229         
+0047   2030           00230         CALL TESTE_BISSEXTO
+                      00231         
+0048   2848           00232         GOTO $
+                      00233 
+0049   2841           00234         GOTO MAIN
+                      00235 
+                      00236 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00237 ;*                       FIM DO PROGRAMA                           *
+                      00238 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00239 
+                      00240         END
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+AA                                00000024
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANO                               00000037
+ANO2                              00000038
+ANO_BISSEXTO                      00000039
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+AUX                               0000002C
+AUX_1                             0000002D
+AUX_2                             0000002E
+AUX_MES                           0000002A
+AUX_RES                           0000002B
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+B_ANOS                            00000027
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+COUT                              00000006
+C_DIAS                            00000026
+C_MES                             00000029
+DC                                00000001
+DD                                00000022
+DIVISAO_100                       00000014
+DIVISAO_4                         0000000C
+EEADR                             0000009B
+EECON1                            0000009C
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INICIO                            00000036
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+LOOP_100                          00000028
+LOOP_4                            0000001E
+LOOP_D100                         00000017
+LOOP_D4                           0000000F
+M                                 00000032
+M1                                00000033
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+MAIN                              00000041
+MM                                00000023
+MULTI_100                         00000024
+MULTI_4                           0000001C
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+R                                 0000002F
+R1                                00000030
+R2                                00000031
+RD                                00000000
+RES_M                             00000034
+RES_M1                            00000035
+RES_M1_1                          00000036
+RES_W                             00000025
+RP0                               00000005
+RP1                               00000006
+SAI_INT                           00000007
+SOMA                              00000028
+STATUS                            00000003
+STATUS_TEMP                       00000021
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TESTE_BISSEXTO                    00000030
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+MPASM 5.77                          AT-1.ASM   8-24-2021  22:00:50         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F675                          00000001
+__DEBUG                           
+__MPLAB_DEBUGGER_SIMULATOR        1
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : X---XXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXX------ ---------------- ---------------- ----------------
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:    71
+Program Memory Words Free:   953
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :    12 reported,     0 suppressed
+
+
