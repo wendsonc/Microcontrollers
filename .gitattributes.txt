@@ -1,4 +1,4 @@
 ```bash
 * linguist-vendored
-*.php linguist-vendored=false
+*.makefile linguist-vendored=false
 ```
